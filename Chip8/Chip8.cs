@@ -52,7 +52,7 @@ namespace Chip8
 
         public void LoadRom(ushort[] memory)
         {
-            string path = Directory.GetParent(Directory.GetCurrentDirectory()).Parent.Parent.Parent.FullName + @"\Chip8\Roms\IBM_Logo.ch8";
+            string path = Directory.GetParent(Directory.GetCurrentDirectory()).Parent.Parent.Parent.FullName + @"\Chip8\Roms\test_opcode.ch8";
             byte[] romData = File.ReadAllBytes(path);
             for (int i = 0; i < romData.Length; i++)
             {

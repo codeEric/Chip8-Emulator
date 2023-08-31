@@ -38,6 +38,7 @@ namespace Chip8
         private ushort I;
         private byte[] V;
         private ushort[] stack;
+        private byte sp;
         private Opcode opcode;
         private byte delayTimer;
         private byte soundTimer;
@@ -48,7 +49,19 @@ namespace Chip8
             ClearDisplay();
             pc = StartingLocation;
             V = new byte[16];
+            sp = 0;
             stack = new ushort[16];
+        }
+
+        private void DebugMessage<T>(T message)
+        {
+
+            System.Diagnostics.Debug.WriteLine(message?.ToString());
+        }
+
+        private string ConvertToHex(ushort data)
+        {
+            return Convert.ToString(data, 16).PadLeft(4, '0').ToUpper();
         }
 
         private void ClearDisplay()
@@ -92,6 +105,7 @@ namespace Chip8
         {
             opcode = new Opcode((ushort)(memory[pc] << 8 | memory[pc+1]));
             ushort op = (ushort)(memory[pc] << 8 | memory[pc + 1]);
+            //DebugMessage($"Current Opcode: {ConvertToHex(opcode.Data)}");
             pc += 2;
         }
 
@@ -102,9 +116,27 @@ namespace Chip8
                 case 0x0 when opcode.N == 0x0:
                     ClearDisplay();
                     break;
-
+                case 0x0 when opcode.N == 0xE:
+                    pc = stack[--sp];
+                    break;
                 case 0x1:
                     pc = opcode.NNN;
+                    break;
+                case 0x2:
+                    stack[sp++] = pc;
+                    pc = opcode.NNN;
+                    break;
+                case 0x3:
+                    if (V[opcode.X] == opcode.NN) 
+                        pc += 2;
+                    break;
+                case 0x4:
+                    if (V[opcode.X] != opcode.NN)
+                        pc += 2; 
+                    break;
+                case 0x5:
+                    if (V[opcode.X] == V[opcode.Y])
+                        pc += 2;
                     break;
                 case 0x6:
                     V[opcode.X] = opcode.NN;
@@ -112,14 +144,84 @@ namespace Chip8
                 case 0x7:
                     V[opcode.X] += opcode.NN;
                     break;
+                case 0x8 when opcode.N == 0x0:
+                    V[opcode.X] = V[opcode.Y];
+                    break;
+                case 0x8 when opcode.N == 0x1:
+                    V[opcode.X] |= V[opcode.Y];
+                    break;
+                case 0x8 when opcode.N == 0x2:
+                    V[opcode.X] &= V[opcode.Y];
+                    break;
+                case 0x8 when opcode.N == 0x3:
+                    V[opcode.X] ^= V[opcode.Y];
+                    break;
+                case 0x8 when opcode.N == 0x4:
+                    if (0xFF - V[opcode.X] < V[opcode.Y])
+                        V[0xF] = 1;
+                    else
+                        V[0xF] = 0;
+                    V[opcode.X] += V[opcode.Y];
+                    break;
+                case 0x8 when opcode.N == 0x5:
+                    if (V[opcode.Y] > V[opcode.X])
+                        V[0xF] = 1;
+                    else
+                        V[0xF] = 0;
+                    V[opcode.X] -= V[opcode.Y];
+                    break;
+                case 0x8 when opcode.N == 0x6:
+                    V[opcode.X] >>= 1;
+                    break;
+                case 0x8 when opcode.N == 0x7:
+                    if (V[opcode.Y] < V[opcode.X])
+                        V[0xF] = 1;
+                    else
+                        V[0xF] = 0;
+                    V[opcode.X] = (byte)(V[opcode.Y] - V[opcode.X]);
+                    break;
+                case 0x8 when opcode.N == 0xE:
+                    V[opcode.X] <<= 1;
+                    break;
+                case 0x9:
+                    if (V[opcode.X] != V[opcode.Y])
+                        pc += 2;
+                    break;
                 case 0xA:
                     I = opcode.NNN;
+                    break;
+                case 0xB:
+                    pc = (ushort)(V[0x0] + opcode.NNN);
+                    break;
+                case 0xC:
+                    Random rand = new Random();
+                    V[opcode.X] = (byte)(rand.Next(0, 256) & opcode.NN);
                     break;
                 case 0xD:
                     Draw(memory, opcode.X, opcode.Y, opcode.N);
                     break;
+                case 0xF when opcode.NN == 0x1E:
+                    I += V[opcode.X];
+                    break;
+                case 0xF when opcode.NN == 0x33:
+                    memory[I] = (ushort)(V[opcode.X] / 100);
+                    memory[I + 1] = (ushort)(V[opcode.X] / 10 % 10);
+                    memory[I + 2] = (ushort)(V[opcode.X] % 10);
+                    break;
+                case 0xF when opcode.NN == 0x55:
+                    for(int i = 0; i <= opcode.X; i++)
+                    {
+                        memory[I + i] = V[i];
+                    }
+                    break;
+                case 0xF when opcode.NN == 0x65:
+                    for (int i = 0; i <= opcode.X; i++)
+                    {
+                        V[i] = (byte)(memory[I + i]);
+                    }
+                    break;
                 default:
-                    Console.Error.WriteLine($"Unrecognized opcode: [{Convert.ToString(opcode.Data, 16).PadLeft(4, '0').ToUpper()}]");
+                    DebugMessage($"Unrecognized opcode: [{ConvertToHex(opcode.Data)}]");
                     break;
             }
         }
