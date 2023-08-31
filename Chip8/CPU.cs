@@ -40,9 +40,13 @@ namespace Chip8
         private ushort[] stack;
         private byte sp;
         private Opcode opcode;
-        private byte delayTimer;
-        private byte soundTimer;
-        
+        private byte[] _keypad;
+        public byte[] Keypad { set { _keypad = value; } get { return _keypad; } }
+        private byte _delayTimer;
+        public byte DelayTimer { set { _delayTimer = value; } get { return _delayTimer; } }
+        private byte _soundTimer;
+        public byte SoundTimer { set { _soundTimer = value; } get { return _soundTimer; } }
+
         public CPU()
         {
             _graphics = new byte[2048]; // Display 64x32 pixels
@@ -51,6 +55,9 @@ namespace Chip8
             V = new byte[16];
             sp = 0;
             stack = new ushort[16];
+            _keypad = new byte[16];
+            _delayTimer = 0;
+            _delayTimer = 0;
         }
 
         private void DebugMessage<T>(T message)
@@ -200,8 +207,39 @@ namespace Chip8
                 case 0xD:
                     Draw(memory, opcode.X, opcode.Y, opcode.N);
                     break;
+                case 0xE when opcode.NN == 0x9E:
+                    if (_keypad[V[opcode.X]] == 1)
+                        pc += 2;
+                    break;
+                case 0xE when opcode.NN == 0xA1:
+                    if(_keypad[V[opcode.X]] == 0)
+                        pc += 2;
+                    break;
+                case 0xF when opcode.NN == 0x07:
+                    V[opcode.X] = _delayTimer;
+                    break;
+                case 0xF when opcode.NN == 0x0A:
+                    var activeKeypad = Array.FindIndex(_keypad, keypad => keypad == 1);
+                    if (activeKeypad >= 0)
+                    {
+                        V[opcode.X] = (byte)activeKeypad;
+                    }
+                    else
+                    {
+                        pc -= 2;
+                    }
+                    break;
+                case 0xF when opcode.NN == 0x15:
+                    _delayTimer = V[opcode.X];
+                    break;
+                case 0xF when opcode.NN == 0x18:
+                    _soundTimer = V[opcode.X];
+                    break;
                 case 0xF when opcode.NN == 0x1E:
                     I += V[opcode.X];
+                    break;
+                case 0xF when opcode.NN == 0x29:
+                    I = (ushort)(0x5 * V[opcode.X]);
                     break;
                 case 0xF when opcode.NN == 0x33:
                     memory[I] = (ushort)(V[opcode.X] / 100);
