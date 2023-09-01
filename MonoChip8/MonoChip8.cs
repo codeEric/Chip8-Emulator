@@ -132,6 +132,7 @@ namespace MonoChip8
 
         protected override void Draw(GameTime gameTime)
         {
+            GraphicsDevice.SetRenderTarget(null);
             GraphicsDevice.Clear(Color.Black);
 
             GraphicsDevice.Textures[0] = null;

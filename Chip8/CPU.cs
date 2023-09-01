@@ -80,32 +80,27 @@ namespace Chip8
         {
             byte x = (byte)(V[X] & 0x3F);
             byte y = (byte)(V[Y] & 0x1F);
-            byte spriteRowData;
-            bool spritePixel;
+            ushort spriteRowData;
             int idx;
             V[0xF] = 0;
 
-            for(int spriteRow = 0; spriteRow < N; spriteRow++)
+            for (int spriteRow = 0; spriteRow < N; spriteRow++)
             {
-                spriteRowData = (byte)(memory[I + spriteRow]);
-                for(int spriteBit = 0; spriteBit < 8; spriteBit++)
+                spriteRowData = (ushort)(memory[I + spriteRow]);
+                for (int spriteBit = 0; spriteBit < 8; spriteBit++)
                 {
-                    spritePixel = (spriteRowData & (1 << 7 - spriteBit)) != 0;
                     idx = (x + spriteBit) + ((y + spriteRow) * 64);
-                    if(!spritePixel && _graphics[idx] == 1)
+                    if (idx > 2047) break;
+                    if ((spriteRowData & (1 << 7 - spriteBit)) != 0)
                     {
-                        _graphics[idx] = 0;
-                        V[0xF] = 1;
-                    }
-                    else if(spritePixel && _graphics[idx] == 0)
-                    {
-                        _graphics[idx] = 1;
+                        if(_graphics[idx] == 1)
+                            V[0xF] = 1;
+                        _graphics[idx] ^= 1;
                     }
 
                 }
 
             }
-
         }
 
         public void Fetch(ushort[] memory)
@@ -164,31 +159,33 @@ namespace Chip8
                     V[opcode.X] ^= V[opcode.Y];
                     break;
                 case 0x8 when opcode.N == 0x4:
+                    V[opcode.X] += V[opcode.Y];
                     if (0xFF - V[opcode.X] < V[opcode.Y])
                         V[0xF] = 1;
                     else
                         V[0xF] = 0;
-                    V[opcode.X] += V[opcode.Y];
                     break;
                 case 0x8 when opcode.N == 0x5:
                     if (V[opcode.Y] > V[opcode.X])
-                        V[0xF] = 1;
-                    else
                         V[0xF] = 0;
+                    else
+                        V[0xF] = 1;
                     V[opcode.X] -= V[opcode.Y];
                     break;
                 case 0x8 when opcode.N == 0x6:
+                    V[0xF] = (byte)(V[opcode.X] & 0x1);
                     V[opcode.X] >>= 1;
                     break;
                 case 0x8 when opcode.N == 0x7:
                     if (V[opcode.Y] < V[opcode.X])
-                        V[0xF] = 1;
-                    else
                         V[0xF] = 0;
+                    else
+                        V[0xF] = 1;
                     V[opcode.X] = (byte)(V[opcode.Y] - V[opcode.X]);
                     break;
                 case 0x8 when opcode.N == 0xE:
-                    V[opcode.X] <<= 1;
+                    V[0xF] = (byte)((V[opcode.X] & 0x80) >> 7);
+                    V[opcode.X] <<= 0x1;
                     break;
                 case 0x9:
                     if (V[opcode.X] != V[opcode.Y])
