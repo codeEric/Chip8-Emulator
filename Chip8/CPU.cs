@@ -34,9 +34,11 @@ namespace Chip8
         private const ushort StartingLocation = 0x200;
         private byte[] _graphics;
         public byte[] Graphics { get { return _graphics; }}
-        private ushort pc;
+        private ushort _pc;
+        public ushort Pc { get { return _pc; } }
         private ushort I;
-        private byte[] V;
+        private byte[] _v;
+        public byte[] V { get { return _v; }}
         private ushort[] stack;
         private byte sp;
         private Opcode opcode;
@@ -51,8 +53,8 @@ namespace Chip8
         {
             _graphics = new byte[2048]; // Display 64x32 pixels
             ClearDisplay();
-            pc = StartingLocation;
-            V = new byte[16];
+            _pc = StartingLocation;
+            _v = new byte[16];
             sp = 0;
             stack = new ushort[16];
             _keypad = new byte[16];
@@ -78,11 +80,11 @@ namespace Chip8
 
         private void Draw(ushort[] memory, byte X, byte Y, byte N)
         {
-            byte x = (byte)(V[X] & 0x3F);
-            byte y = (byte)(V[Y] & 0x1F);
+            byte x = (byte)(_v[X] & 0x3F);
+            byte y = (byte)(_v[Y] & 0x1F);
             ushort spriteRowData;
             int idx;
-            V[0xF] = 0;
+            _v[0xF] = 0;
 
             for (int spriteRow = 0; spriteRow < N; spriteRow++)
             {
@@ -94,7 +96,7 @@ namespace Chip8
                     if ((spriteRowData & (1 << 7 - spriteBit)) != 0)
                     {
                         if(_graphics[idx] == 1)
-                            V[0xF] = 1;
+                            _v[0xF] = 1;
                         _graphics[idx] ^= 1;
                     }
 
@@ -105,10 +107,10 @@ namespace Chip8
 
         public void Fetch(ushort[] memory)
         {
-            opcode = new Opcode((ushort)(memory[pc] << 8 | memory[pc+1]));
-            ushort op = (ushort)(memory[pc] << 8 | memory[pc + 1]);
+            opcode = new Opcode((ushort)(memory[_pc] << 8 | memory[_pc+1]));
+            ushort op = (ushort)(memory[_pc] << 8 | memory[_pc + 1]);
             //DebugMessage($"Current Opcode: {ConvertToHex(opcode.Data)}");
-            pc += 2;
+            _pc += 2;
         }
 
         public void DecodeAndExecute(ushort[] memory)
@@ -119,140 +121,140 @@ namespace Chip8
                     ClearDisplay();
                     break;
                 case 0x0 when opcode.N == 0xE:
-                    pc = stack[--sp];
+                    _pc = stack[--sp];
                     break;
                 case 0x1:
-                    pc = opcode.NNN;
+                    _pc = opcode.NNN;
                     break;
                 case 0x2:
-                    stack[sp++] = pc;
-                    pc = opcode.NNN;
+                    stack[sp++] = _pc;
+                    _pc = opcode.NNN;
                     break;
                 case 0x3:
-                    if (V[opcode.X] == opcode.NN) 
-                        pc += 2;
+                    if (_v[opcode.X] == opcode.NN) 
+                        _pc += 2;
                     break;
                 case 0x4:
-                    if (V[opcode.X] != opcode.NN)
-                        pc += 2; 
+                    if (_v[opcode.X] != opcode.NN)
+                        _pc += 2; 
                     break;
                 case 0x5:
-                    if (V[opcode.X] == V[opcode.Y])
-                        pc += 2;
+                    if (_v[opcode.X] == _v[opcode.Y])
+                        _pc += 2;
                     break;
                 case 0x6:
-                    V[opcode.X] = opcode.NN;
+                    _v[opcode.X] = opcode.NN;
                     break;
                 case 0x7:
-                    V[opcode.X] += opcode.NN;
+                    _v[opcode.X] += opcode.NN;
                     break;
                 case 0x8 when opcode.N == 0x0:
-                    V[opcode.X] = V[opcode.Y];
+                    _v[opcode.X] = _v[opcode.Y];
                     break;
                 case 0x8 when opcode.N == 0x1:
-                    V[opcode.X] |= V[opcode.Y];
+                    _v[opcode.X] |= _v[opcode.Y];
                     break;
                 case 0x8 when opcode.N == 0x2:
-                    V[opcode.X] &= V[opcode.Y];
+                    _v[opcode.X] &= _v[opcode.Y];
                     break;
                 case 0x8 when opcode.N == 0x3:
-                    V[opcode.X] ^= V[opcode.Y];
+                    _v[opcode.X] ^= _v[opcode.Y];
                     break;
                 case 0x8 when opcode.N == 0x4:
-                    V[opcode.X] += V[opcode.Y];
-                    if (0xFF - V[opcode.X] < V[opcode.Y])
-                        V[0xF] = 1;
+                    _v[opcode.X] += _v[opcode.Y];
+                    if (0xFF - _v[opcode.X] < _v[opcode.Y])
+                        _v[0xF] = 1;
                     else
-                        V[0xF] = 0;
+                        _v[0xF] = 0;
                     break;
                 case 0x8 when opcode.N == 0x5:
-                    if (V[opcode.Y] > V[opcode.X])
-                        V[0xF] = 0;
+                    if (_v[opcode.Y] > _v[opcode.X])
+                        _v[0xF] = 0;
                     else
-                        V[0xF] = 1;
-                    V[opcode.X] -= V[opcode.Y];
+                        _v[0xF] = 1;
+                    _v[opcode.X] -= _v[opcode.Y];
                     break;
                 case 0x8 when opcode.N == 0x6:
-                    V[0xF] = (byte)(V[opcode.X] & 0x1);
-                    V[opcode.X] >>= 1;
+                    _v[0xF] = (byte)(_v[opcode.X] & 0x1);
+                    _v[opcode.X] >>= 1;
                     break;
                 case 0x8 when opcode.N == 0x7:
-                    if (V[opcode.Y] < V[opcode.X])
-                        V[0xF] = 0;
+                    if (_v[opcode.Y] < _v[opcode.X])
+                        _v[0xF] = 0;
                     else
-                        V[0xF] = 1;
-                    V[opcode.X] = (byte)(V[opcode.Y] - V[opcode.X]);
+                        _v[0xF] = 1;
+                    _v[opcode.X] = (byte)(_v[opcode.Y] - _v[opcode.X]);
                     break;
                 case 0x8 when opcode.N == 0xE:
-                    V[0xF] = (byte)((V[opcode.X] & 0x80) >> 7);
-                    V[opcode.X] <<= 0x1;
+                    _v[0xF] = (byte)((_v[opcode.X] & 0x80) >> 7);
+                    _v[opcode.X] <<= 0x1;
                     break;
                 case 0x9:
-                    if (V[opcode.X] != V[opcode.Y])
-                        pc += 2;
+                    if (_v[opcode.X] != _v[opcode.Y])
+                        _pc += 2;
                     break;
                 case 0xA:
                     I = opcode.NNN;
                     break;
                 case 0xB:
-                    pc = (ushort)(V[0x0] + opcode.NNN);
+                    _pc = (ushort)(_v[0x0] + opcode.NNN);
                     break;
                 case 0xC:
                     Random rand = new Random();
-                    V[opcode.X] = (byte)(rand.Next(0, 256) & opcode.NN);
+                    _v[opcode.X] = (byte)(rand.Next(0, 256) & opcode.NN);
                     break;
                 case 0xD:
                     Draw(memory, opcode.X, opcode.Y, opcode.N);
                     break;
                 case 0xE when opcode.NN == 0x9E:
-                    if (_keypad[V[opcode.X]] == 1)
-                        pc += 2;
+                    if (_keypad[_v[opcode.X]] == 1)
+                        _pc += 2;
                     break;
                 case 0xE when opcode.NN == 0xA1:
-                    if(_keypad[V[opcode.X]] == 0)
-                        pc += 2;
+                    if(_keypad[_v[opcode.X]] == 0)
+                        _pc += 2;
                     break;
                 case 0xF when opcode.NN == 0x07:
-                    V[opcode.X] = _delayTimer;
+                    _v[opcode.X] = _delayTimer;
                     break;
                 case 0xF when opcode.NN == 0x0A:
                     var activeKeypad = Array.FindIndex(_keypad, keypad => keypad == 1);
                     if (activeKeypad >= 0)
                     {
-                        V[opcode.X] = (byte)activeKeypad;
+                        _v[opcode.X] = (byte)activeKeypad;
                     }
                     else
                     {
-                        pc -= 2;
+                        _pc -= 2;
                     }
                     break;
                 case 0xF when opcode.NN == 0x15:
-                    _delayTimer = V[opcode.X];
+                    _delayTimer = _v[opcode.X];
                     break;
                 case 0xF when opcode.NN == 0x18:
-                    _soundTimer = V[opcode.X];
+                    _soundTimer = _v[opcode.X];
                     break;
                 case 0xF when opcode.NN == 0x1E:
-                    I += V[opcode.X];
+                    I += _v[opcode.X];
                     break;
                 case 0xF when opcode.NN == 0x29:
-                    I = (ushort)(0x5 * V[opcode.X]);
+                    I = (ushort)(0x5 * _v[opcode.X]);
                     break;
                 case 0xF when opcode.NN == 0x33:
-                    memory[I] = (ushort)(V[opcode.X] / 100);
-                    memory[I + 1] = (ushort)(V[opcode.X] / 10 % 10);
-                    memory[I + 2] = (ushort)(V[opcode.X] % 10);
+                    memory[I] = (ushort)(_v[opcode.X] / 100);
+                    memory[I + 1] = (ushort)(_v[opcode.X] / 10 % 10);
+                    memory[I + 2] = (ushort)(_v[opcode.X] % 10);
                     break;
                 case 0xF when opcode.NN == 0x55:
                     for(int i = 0; i <= opcode.X; i++)
                     {
-                        memory[I + i] = V[i];
+                        memory[I + i] = _v[i];
                     }
                     break;
                 case 0xF when opcode.NN == 0x65:
                     for (int i = 0; i <= opcode.X; i++)
                     {
-                        V[i] = (byte)(memory[I + i]);
+                        _v[i] = (byte)(memory[I + i]);
                     }
                     break;
                 default:

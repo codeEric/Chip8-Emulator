@@ -26,12 +26,12 @@ namespace Chip8
                         0xF0, 0x80, 0xF0, 0x80, 0x80  // F
                         };
 
-        public void Initialize()
+        public void Initialize(string name)
         {
             memory = new ushort[4096];
             _cpu = new CPU();
             LoadFont();
-            LoadRom(memory);
+            LoadRom(memory, name);
             _cpu.Fetch(memory);
             _cpu.DecodeAndExecute(memory);
         }
@@ -50,9 +50,9 @@ namespace Chip8
             }
         }
 
-        public void LoadRom(ushort[] memory)
+        public void LoadRom(ushort[] memory, string name)
         {
-            string path = Directory.GetParent(Directory.GetCurrentDirectory()).Parent.Parent.Parent.FullName + @"\Chip8\Roms\breakout.ch8";
+            string path = Directory.GetParent(Directory.GetCurrentDirectory()).Parent.Parent.Parent.FullName + $@"\Chip8\Roms\{name}.ch8";
             byte[] romData = File.ReadAllBytes(path);
             for (int i = 0; i < romData.Length; i++)
             {

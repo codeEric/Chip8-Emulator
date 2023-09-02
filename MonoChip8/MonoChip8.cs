@@ -1,7 +1,8 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-
+using System;
+using System.IO;
 
 namespace MonoChip8
 {
@@ -16,34 +17,53 @@ namespace MonoChip8
         Texture2D _canvas;
         private Rectangle _scaleSize;
 
+        private DebugUI debugUi;
+        bool pKeyPressed = false;
+
         public MonoChip8()
         {
             _graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
-            IsMouseVisible = true;
             chip8 = new Chip8.Chip8();
+            debugUi = new DebugUI();
+            debugUi.StopButtonClicked += OnStopButtonClicked;
         }
 
         protected override void Initialize()
         {
-            chip8.Initialize();
+            chip8.Initialize("Breakout");
             _canvas = new Texture2D(GraphicsDevice, 64, 32, false, SurfaceFormat.Color);
             _gfx = new Color[2048];
-            _graphics.PreferredBackBufferWidth = 1024;
-            _graphics.PreferredBackBufferHeight = 512;
+            _graphics.PreferredBackBufferWidth = 1280;
+            _graphics.PreferredBackBufferHeight = 640;
             _graphics.ApplyChanges();
-            _scaleSize = GraphicsDevice.PresentationParameters.Bounds;
+
+            IsMouseVisible = true;
+
             base.Initialize();
         }
 
         protected override void LoadContent()
         {
             _spriteBatch = new SpriteBatch(GraphicsDevice);
+            debugUi.Load(this);
+            debugUi.Init();
+
         }
 
         protected override void Update(GameTime gameTime)
         {
             KeyboardState state = Keyboard.GetState();
+            #region Inputs
+            if (state.IsKeyDown(Keys.P) && !pKeyPressed)
+            {
+                pKeyPressed = true;
+                debugUi.Show = !debugUi.Show;
+            }
+            if (state.IsKeyUp(Keys.P))
+            {
+                pKeyPressed = false;
+            }
             if (state.IsKeyDown(Keys.D1))
             {
                 chip8.Cpu.Keypad[0x0] = 1;
@@ -108,7 +128,10 @@ namespace MonoChip8
             {
                 chip8.Cpu.Keypad[0xF] = 1;
             }
+            #endregion
+
             chip8.Run();
+            debugUi.Update(chip8.Cpu);
             _pixels = chip8.Cpu.Graphics;
             for(int i = 0; i < _pixels.Length; i++)
             {
@@ -122,11 +145,11 @@ namespace MonoChip8
             {
                 if(chip8.Cpu.SoundTimer == 1)
                 {
-                    System.Console.Beep();
+                    Console.Beep();
                 }
                 chip8.Cpu.SoundTimer--;
             }
-            System.Array.Clear(chip8.Cpu.Keypad);
+            Array.Clear(chip8.Cpu.Keypad);
             base.Update(gameTime);
         }
 
@@ -140,9 +163,18 @@ namespace MonoChip8
             _canvas.SetData(_gfx, 0, 2048);
 
             _spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.Additive, SamplerState.PointWrap);
-            _spriteBatch.Draw(_canvas, new Rectangle(0, 0, _scaleSize.Width, _scaleSize.Height), Color.White);
+            _spriteBatch.Draw(_canvas, new Rectangle(0, 0, 64*12, 32*12), Color.White);
             _spriteBatch.End();
+
+            if(debugUi.Show)
+                debugUi.Render();
+
             base.Draw(gameTime);
+        }
+
+        public void OnStopButtonClicked(object sender, RomEventArgs args)
+        {
+            chip8.Initialize(args.Rom);
         }
     }
 }
