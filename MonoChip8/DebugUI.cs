@@ -23,6 +23,20 @@ namespace MonoChip8
         }
     }
 
+    public class StateEventArgs : EventArgs
+    {
+        private readonly Chip8.Chip8State state;
+        public Chip8.Chip8State State
+        {
+            get { return this.state; }
+        }
+
+        public StateEventArgs(Chip8.Chip8State state)
+        {
+            this.state = state;
+        }
+    }
+
     internal class DebugUI
     {
 
@@ -32,9 +46,15 @@ namespace MonoChip8
         public bool Show { get; set; }
 
         public event EventHandler<RomEventArgs> StopButtonClicked;
+        public event EventHandler<StateEventArgs> StateButtonClicked;
         protected virtual void OnStopButtonClicked(RomEventArgs e)
         {
             StopButtonClicked?.Invoke(this, e);
+        }
+
+        protected virtual void OnStateButtonClicked(StateEventArgs e)
+        {
+            StateButtonClicked?.Invoke(this, e);
         }
 
         public void Load(MonoChip8 monoChip8)
@@ -92,48 +112,69 @@ namespace MonoChip8
             infoGrid.GridRow = 0;
             grid.Widgets.Add(infoGrid);
 
+            var registerGrid = new Grid()
+            {
+                RowSpacing = 4,
+                ColumnSpacing = 5,
+            };
+            registerGrid.GridColumn = 1;
+            registerGrid.GridRow = 1;
+            grid.Widgets.Add(registerGrid);
+            
+
             var pcLabel = new Label();
             pcLabel.Id = "pcLabel";
             pcLabel.Text = $"PC: 0000";
             pcLabel.GridRow = 0;
-            infoGrid.Widgets.Add(pcLabel);
+            pcLabel.GridColumn = 0;
+            pcLabel.Padding = new Myra.Graphics2D.Thickness(0, 8, 0, 0);
+            registerGrid.Widgets.Add(pcLabel);
 
             var iLabel = new Label();
             iLabel.Id = "iRegister";
             iLabel.Text = "I: 0000";
-            iLabel.GridRow = 0;
-            iLabel.GridColumn = 1;
-            infoGrid.Widgets.Add(iLabel);
+            iLabel.GridRow = 1;
+            iLabel.GridColumn = 0;
+            pcLabel.Padding = new Myra.Graphics2D.Thickness(0, 8, 0, 0);
+            registerGrid.Widgets.Add(iLabel);
+
 
             for (int i = 0; i < 16; i++)
             {
                 var tempLabel = new Label();
                 tempLabel.Id = $"v{i} Register";
                 tempLabel.Text = $"V[0x{Convert.ToString(i, 16).ToUpper()}]: 0000";
-                tempLabel.GridRow = (i % 8) + 1;
-                tempLabel.GridColumn = i / 8;
-                infoGrid.Widgets.Add(tempLabel);
+                tempLabel.GridRow = (i % 4);
+                tempLabel.GridColumn = i / 4 + 1;
+                tempLabel.Padding = new Myra.Graphics2D.Thickness(8);
+                registerGrid.Widgets.Add(tempLabel);
             }
 
             var bottomGrid = new Grid()
             {
                 ColumnSpacing = 2,
-                RowSpacing = 2,
+                RowSpacing = 3,
             };
 
-            grid.ColumnsProportions.Add(new Proportion());
-            grid.ColumnsProportions.Add(new Proportion());
-            grid.RowsProportions.Add(new Proportion());
-            grid.RowsProportions.Add(new Proportion());
+            bottomGrid.ColumnsProportions.Add(new Proportion
+            {
+                Type = ProportionType.Pixels,
+                Value = 220,
+            });
+            bottomGrid.ColumnsProportions.Add(new Proportion());
+            bottomGrid.RowsProportions.Add(new Proportion());
+            bottomGrid.RowsProportions.Add(new Proportion());
+            bottomGrid.RowsProportions.Add(new Proportion());
 
             bottomGrid.GridColumn = 0;
             bottomGrid.GridRow = 1;
             grid.Widgets.Add(bottomGrid);
 
             var combo = new ComboBox();
-            combo.Items.Add(new ListItem("Breakout"));
             combo.Items.Add(new ListItem("IBM Logo"));
+            combo.Items.Add(new ListItem("Breakout"));
             combo.Items.Add(new ListItem("Random Number Test"));
+            combo.Items.Add(new ListItem("Space Invaders"));
             combo.SelectedItem = combo.Items[0];
             combo.GridColumn = 0;
             combo.GridRow = 0;
@@ -148,6 +189,30 @@ namespace MonoChip8
             loadRom.Click += (s, a) =>
             {
                 OnStopButtonClicked(new RomEventArgs(combo.SelectedItem.Text));
+            };
+
+            var startButton = new TextButton();
+            startButton.Text = "Start";
+            startButton.GridColumn = 0;
+            startButton.GridRow = 1;
+            startButton.Margin = new Myra.Graphics2D.Thickness(0, 10, 0, 0);
+            bottomGrid.Widgets.Add(startButton);
+
+            startButton.Click += (s, a) =>
+            {
+                OnStateButtonClicked(new StateEventArgs(Chip8.Chip8State.Running));
+            };
+
+            var pauseButton = new TextButton();
+            pauseButton.Text = "Pause";
+            pauseButton.GridColumn = 1;
+            pauseButton.GridRow = 1;
+            pauseButton.Margin = new Myra.Graphics2D.Thickness(0, 10, 0, 0);
+            bottomGrid.Widgets.Add(pauseButton);
+
+            pauseButton.Click += (s, a) =>
+            {
+                OnStateButtonClicked(new StateEventArgs(Chip8.Chip8State.Paused));
             };
 
             _desktop = new Desktop();

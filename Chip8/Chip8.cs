@@ -1,11 +1,19 @@
 ﻿
 namespace Chip8
 {
+
+    public enum Chip8State
+    {
+        Running,
+        Paused
+    }
+
     public class Chip8
     {
         private ushort[] memory;
         private CPU _cpu;
         public CPU Cpu { get { return _cpu; } }
+        public Chip8State State { get; set; } = Chip8State.Paused;
 
         private readonly byte[] Font = {
                         0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
@@ -34,6 +42,8 @@ namespace Chip8
             LoadRom(memory, name);
             _cpu.Fetch(memory);
             _cpu.DecodeAndExecute(memory);
+            State = Chip8State.Running;
+
         }
 
         public void Run()

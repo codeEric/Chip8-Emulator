@@ -70,7 +70,7 @@ namespace Chip8
 
         private string ConvertToHex(ushort data)
         {
-            return Convert.ToString(data, 16).PadLeft(4, '0').ToUpper();
+            return Convert.ToString(data, 16).PadLeft(5, '0').ToUpper();
         }
 
         private void ClearDisplay()
@@ -108,8 +108,6 @@ namespace Chip8
         public void Fetch(ushort[] memory)
         {
             opcode = new Opcode((ushort)(memory[_pc] << 8 | memory[_pc+1]));
-            ushort op = (ushort)(memory[_pc] << 8 | memory[_pc + 1]);
-            //DebugMessage($"Current Opcode: {ConvertToHex(opcode.Data)}");
             _pc += 2;
         }
 
