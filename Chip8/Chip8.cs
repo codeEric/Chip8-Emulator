@@ -10,12 +10,13 @@ namespace Chip8
 
     public class Chip8
     {
-        private ushort[] memory;
+        private ushort[] memory; // Memory is 4kB (4096 bytes)
         public ushort[] Memory { get { return memory; } }
         private CPU _cpu;
         public CPU Cpu { get { return _cpu; } }
         public Chip8State State { get; set; } = Chip8State.Paused;
 
+        public const byte CharacterSize = 0x5;
         private readonly byte[] Font = {
                         0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
                         0x20, 0x60, 0x20, 0x20, 0x70, // 1
@@ -47,7 +48,7 @@ namespace Chip8
 
         }
 
-        public void Run()
+        public void CompleteCycle()
         {
             _cpu.Fetch(memory);
             _cpu.DecodeAndExecute(memory);

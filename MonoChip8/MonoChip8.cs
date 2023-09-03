@@ -10,29 +10,32 @@ namespace MonoChip8
     {
         private GraphicsDeviceManager _graphics;
         private SpriteBatch _spriteBatch;
-        Chip8.Chip8 chip8;
-        byte[] _pixels;
+        private Chip8.Chip8 _chip8;
+        private byte[] _pixels;
 
         private Color[] _gfx;
-        Texture2D _canvas;
-        private Rectangle _scaleSize;
+        private Texture2D _canvas;
+        private const int PixelSize = 12;
+        private const int DisplayWidth = 64;
+        private const int DisplayHeight = 32;
 
-        private DebugUI debugUi;
-        bool pKeyPressed = false;
+        private DebugUI _debugUi;
+        private bool _pKeyPressed;
 
         public MonoChip8()
         {
             _graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
-            chip8 = new Chip8.Chip8();
-            debugUi = new DebugUI();
-            debugUi.StopButtonClicked += OnStopButtonClicked;
-            debugUi.StateButtonClicked += OnStateButtonClicked;
+            _chip8 = new Chip8.Chip8();
+            _debugUi = new DebugUI();
+            _debugUi.StopButtonClicked += OnStopButtonClicked;
+            _debugUi.StateButtonClicked += OnStateButtonClicked;
+            _pKeyPressed = false;
         }
 
         protected override void Initialize()
         {
-            chip8.Initialize("IBM Logo");
+            _chip8.Initialize("IBM Logo");
             _canvas = new Texture2D(GraphicsDevice, 64, 32, false, SurfaceFormat.Color);
             _gfx = new Color[2048];
             _graphics.PreferredBackBufferWidth = 1280;
@@ -47,116 +50,116 @@ namespace MonoChip8
         protected override void LoadContent()
         {
             _spriteBatch = new SpriteBatch(GraphicsDevice);
-            debugUi.Load(this);
-            debugUi.Init();
+            _debugUi.Load(this);
+            _debugUi.Init();
 
         }
 
         protected override void Update(GameTime gameTime)
         {
-            switch (chip8.State)
+            switch (_chip8.State)
             {
                 case Chip8.Chip8State.Running:
                     KeyboardState state = Keyboard.GetState();
                     #region Inputs
-                    if (state.IsKeyDown(Keys.P) && !pKeyPressed)
+                    if (state.IsKeyDown(Keys.P) && !_pKeyPressed)
                     {
-                        pKeyPressed = true;
-                        debugUi.Show = !debugUi.Show;
+                        _pKeyPressed = true;
+                        _debugUi.Show = !_debugUi.Show;
                     }
                     if (state.IsKeyUp(Keys.P))
                     {
-                        pKeyPressed = false;
+                        _pKeyPressed = false;
                     }
                     if (state.IsKeyDown(Keys.D1))
                     {
-                        chip8.Cpu.Keypad[0x0] = 1;
+                        _chip8.Cpu.Keypad[0x0] = 1;
                     }
                     if (state.IsKeyDown(Keys.D2))
                     {
-                        chip8.Cpu.Keypad[0x1] = 1;
+                        _chip8.Cpu.Keypad[0x1] = 1;
                     }
                     if (state.IsKeyDown(Keys.D3))
                     {
-                        chip8.Cpu.Keypad[0x2] = 1;
+                        _chip8.Cpu.Keypad[0x2] = 1;
                     }
                     if (state.IsKeyDown(Keys.D4))
                     {
-                        chip8.Cpu.Keypad[0x3] = 1;
+                        _chip8.Cpu.Keypad[0x3] = 1;
                     }
                     if (state.IsKeyDown(Keys.Q))
                     {
-                        chip8.Cpu.Keypad[0x4] = 1;
+                        _chip8.Cpu.Keypad[0x4] = 1;
                     }
                     if (state.IsKeyDown(Keys.W))
                     {
-                        chip8.Cpu.Keypad[0x5] = 1;
+                        _chip8.Cpu.Keypad[0x5] = 1;
                     }
                     if (state.IsKeyDown(Keys.E))
                     {
-                        chip8.Cpu.Keypad[0x6] = 1;
+                        _chip8.Cpu.Keypad[0x6] = 1;
                     }
                     if (state.IsKeyDown(Keys.R))
                     {
-                        chip8.Cpu.Keypad[0x7] = 1;
+                        _chip8.Cpu.Keypad[0x7] = 1;
                     }
                     if (state.IsKeyDown(Keys.A))
                     {
-                        chip8.Cpu.Keypad[0x8] = 1;
+                        _chip8.Cpu.Keypad[0x8] = 1;
                     }
                     if (state.IsKeyDown(Keys.S))
                     {
-                        chip8.Cpu.Keypad[0x9] = 1;
+                        _chip8.Cpu.Keypad[0x9] = 1;
                     }
                     if (state.IsKeyDown(Keys.D))
                     {
-                        chip8.Cpu.Keypad[0xA] = 1;
+                        _chip8.Cpu.Keypad[0xA] = 1;
                     }
                     if (state.IsKeyDown(Keys.F))
                     {
-                        chip8.Cpu.Keypad[0xB] = 1;
+                        _chip8.Cpu.Keypad[0xB] = 1;
                     }
                     if (state.IsKeyDown(Keys.Z))
                     {
-                        chip8.Cpu.Keypad[0xC] = 1;
+                        _chip8.Cpu.Keypad[0xC] = 1;
                     }
                     if (state.IsKeyDown(Keys.X))
                     {
-                        chip8.Cpu.Keypad[0xD] = 1;
+                        _chip8.Cpu.Keypad[0xD] = 1;
                     }
                     if (state.IsKeyDown(Keys.C))
                     {
-                        chip8.Cpu.Keypad[0xE] = 1;
+                        _chip8.Cpu.Keypad[0xE] = 1;
                     }
                     if (state.IsKeyDown(Keys.V))
                     {
-                        chip8.Cpu.Keypad[0xF] = 1;
+                        _chip8.Cpu.Keypad[0xF] = 1;
                     }
                     #endregion
 
                     for (int j = 0; j < 8; j++)
                     {
-                        chip8.Run();
-                        debugUi.Update(chip8.Cpu, chip8.Memory);
+                        _chip8.CompleteCycle();
+                        _debugUi.Update(_chip8.Cpu, _chip8.Memory);
                     }
-                    _pixels = chip8.Cpu.Graphics;
+                    _pixels = _chip8.Cpu.Graphics;
                     for (int i = 0; i < _pixels.Length; i++)
                     {
                         _gfx[i] = _pixels[i] == 1 ? Color.White : Color.Black;
                     }
 
-                    if (chip8.Cpu.DelayTimer > 0)
-                        chip8.Cpu.DelayTimer--;
+                    if (_chip8.Cpu.DelayTimer > 0)
+                        _chip8.Cpu.DelayTimer--;
 
-                    if (chip8.Cpu.SoundTimer > 0)
+                    if (_chip8.Cpu.SoundTimer > 0)
                     {
-                        if (chip8.Cpu.SoundTimer == 1)
+                        if (_chip8.Cpu.SoundTimer == 1)
                         {
                             Console.Beep();
                         }
-                        chip8.Cpu.SoundTimer--;
+                        _chip8.Cpu.SoundTimer--;
                     }
-                    Array.Clear(chip8.Cpu.Keypad);
+                    Array.Clear(_chip8.Cpu.Keypad);
                     break;
                 case Chip8.Chip8State.Paused:
                     break;
@@ -174,23 +177,23 @@ namespace MonoChip8
             _canvas.SetData(_gfx, 0, 2048);
 
             _spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.Additive, SamplerState.PointWrap);
-            _spriteBatch.Draw(_canvas, new Rectangle(0, 0, 64*12, 32*12), Color.White);
+            _spriteBatch.Draw(_canvas, new Rectangle(0, 0, DisplayWidth * PixelSize, DisplayHeight * PixelSize), Color.White);
             _spriteBatch.End();
 
-            if(debugUi.Show)
-                debugUi.Render();
+            if(_debugUi.Show)
+                _debugUi.Render();
 
             base.Draw(gameTime);
         }
 
         public void OnStopButtonClicked(object sender, RomEventArgs args)
         {
-            chip8.Initialize(args.Rom);
+            _chip8.Initialize(args.Rom);
         }
 
         public void OnStateButtonClicked(object sender, StateEventArgs args)
         {
-            chip8.State = args.State;
+            _chip8.State = args.State;
         }
     }
 }
