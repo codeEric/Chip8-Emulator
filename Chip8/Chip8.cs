@@ -11,6 +11,7 @@ namespace Chip8
     public class Chip8
     {
         private ushort[] memory;
+        public ushort[] Memory { get { return memory; } }
         private CPU _cpu;
         public CPU Cpu { get { return _cpu; } }
         public Chip8State State { get; set; } = Chip8State.Paused;

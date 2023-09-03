@@ -137,7 +137,7 @@ namespace MonoChip8
                     for (int j = 0; j < 8; j++)
                     {
                         chip8.Run();
-                        debugUi.Update(chip8.Cpu);
+                        debugUi.Update(chip8.Cpu, chip8.Memory);
                     }
                     _pixels = chip8.Cpu.Graphics;
                     for (int i = 0; i < _pixels.Length; i++)

@@ -67,50 +67,57 @@ namespace MonoChip8
         public void Init()
         {
 
-            var grid = new Grid
+            var mainGrid = new Grid
             {
                 ColumnSpacing = 3,
                 RowSpacing = 3,
             };
-            grid.ColumnsProportions.Add(new Proportion
+            mainGrid.ColumnsProportions.Add(new Proportion
             {
                 Type = ProportionType.Pixels,
                 Value = 768,
             });
-            grid.ColumnsProportions.Add(new Proportion());
-            grid.RowsProportions.Add(new Proportion
+            mainGrid.ColumnsProportions.Add(new Proportion());
+            mainGrid.RowsProportions.Add(new Proportion
             {
                 Type = ProportionType.Pixels,
                 Value = 384,
             });
-            grid.RowsProportions.Add(new Proportion());
+            mainGrid.RowsProportions.Add(new Proportion());
 
             var panel = new Panel();
             panel.Width = 768;
             panel.Height = 384;
             panel.GridColumn = 0;
             panel.GridRow = 0;
-            grid.Widgets.Add(panel);
+            mainGrid.Widgets.Add(panel);
 
-            var infoGrid = new Grid
+            var memoryGrid = new Grid
             {
-                RowSpacing = 18,
+                RowSpacing = 15,
                 ColumnSpacing = 2,
                 Margin = new Myra.Graphics2D.Thickness(20, 0, 0, 0)
             };
-            infoGrid.ColumnsProportions.Add(new Proportion
+            for (int i = 0; i < 15; i++)
             {
-                Type = ProportionType.Pixels,
-                Value = 90,
-            });
-            for (int i = 0; i < 17; i++)
-            {
-                infoGrid.ColumnsProportions.Add(new Proportion());
+                memoryGrid.ColumnsProportions.Add(new Proportion());
             }
 
-            infoGrid.GridColumn = 1;
-            infoGrid.GridRow = 0;
-            grid.Widgets.Add(infoGrid);
+            for (int i = 0; i < 15; i++)
+            {
+                var tempLabel = new Label();
+                tempLabel.Id = $"memory {i}";
+                tempLabel.Text = $"[0x000{Convert.ToString(i, 16).ToUpper()}] = 0000";
+                if(i % 7 == 0 && i != 0 && i != 14)
+                    tempLabel.TextColor = Microsoft.Xna.Framework.Color.Green;
+                tempLabel.GridRow = i;
+                tempLabel.GridColumn = 0;
+                memoryGrid.Widgets.Add(tempLabel);
+            }
+
+            memoryGrid.GridColumn = 1;
+            memoryGrid.GridRow = 0;
+            mainGrid.Widgets.Add(memoryGrid);
 
             var registerGrid = new Grid()
             {
@@ -119,7 +126,7 @@ namespace MonoChip8
             };
             registerGrid.GridColumn = 1;
             registerGrid.GridRow = 1;
-            grid.Widgets.Add(registerGrid);
+            mainGrid.Widgets.Add(registerGrid);
             
 
             var pcLabel = new Label();
@@ -135,9 +142,16 @@ namespace MonoChip8
             iLabel.Text = "I: 0000";
             iLabel.GridRow = 1;
             iLabel.GridColumn = 0;
-            pcLabel.Padding = new Myra.Graphics2D.Thickness(0, 8, 0, 0);
+            iLabel.Padding = new Myra.Graphics2D.Thickness(0, 8, 0, 0);
             registerGrid.Widgets.Add(iLabel);
 
+            var opcodeLabel = new Label();
+            opcodeLabel.Id = "opcode";
+            opcodeLabel.Text = "Op: 0000";
+            opcodeLabel.GridRow = 2;
+            opcodeLabel.GridColumn = 0;
+            opcodeLabel.Padding = new Myra.Graphics2D.Thickness(0, 8, 0, 0);
+            registerGrid.Widgets.Add(opcodeLabel);
 
             for (int i = 0; i < 16; i++)
             {
@@ -150,25 +164,25 @@ namespace MonoChip8
                 registerGrid.Widgets.Add(tempLabel);
             }
 
-            var bottomGrid = new Grid()
+            var bottomLeftGrid = new Grid()
             {
                 ColumnSpacing = 2,
                 RowSpacing = 3,
             };
 
-            bottomGrid.ColumnsProportions.Add(new Proportion
+            bottomLeftGrid.ColumnsProportions.Add(new Proportion
             {
                 Type = ProportionType.Pixels,
                 Value = 220,
             });
-            bottomGrid.ColumnsProportions.Add(new Proportion());
-            bottomGrid.RowsProportions.Add(new Proportion());
-            bottomGrid.RowsProportions.Add(new Proportion());
-            bottomGrid.RowsProportions.Add(new Proportion());
+            bottomLeftGrid.ColumnsProportions.Add(new Proportion());
+            bottomLeftGrid.RowsProportions.Add(new Proportion());
+            bottomLeftGrid.RowsProportions.Add(new Proportion());
+            bottomLeftGrid.RowsProportions.Add(new Proportion());
 
-            bottomGrid.GridColumn = 0;
-            bottomGrid.GridRow = 1;
-            grid.Widgets.Add(bottomGrid);
+            bottomLeftGrid.GridColumn = 0;
+            bottomLeftGrid.GridRow = 1;
+            mainGrid.Widgets.Add(bottomLeftGrid);
 
             var combo = new ComboBox();
             combo.Items.Add(new ListItem("IBM Logo"));
@@ -178,15 +192,15 @@ namespace MonoChip8
             combo.SelectedItem = combo.Items[0];
             combo.GridColumn = 0;
             combo.GridRow = 0;
-            bottomGrid.Widgets.Add(combo);
+            bottomLeftGrid.Widgets.Add(combo);
 
-            var loadRom = new TextButton();
-            loadRom.Text = "Load ROM";
-            loadRom.GridColumn = 1;
-            loadRom.GridRow = 0;
-            bottomGrid.Widgets.Add(loadRom);
+            var loadRomButton = new TextButton();
+            loadRomButton.Text = "Load ROM";
+            loadRomButton.GridColumn = 1;
+            loadRomButton.GridRow = 0;
+            bottomLeftGrid.Widgets.Add(loadRomButton);
 
-            loadRom.Click += (s, a) =>
+            loadRomButton.Click += (s, a) =>
             {
                 OnStopButtonClicked(new RomEventArgs(combo.SelectedItem.Text));
             };
@@ -196,7 +210,7 @@ namespace MonoChip8
             startButton.GridColumn = 0;
             startButton.GridRow = 1;
             startButton.Margin = new Myra.Graphics2D.Thickness(0, 10, 0, 0);
-            bottomGrid.Widgets.Add(startButton);
+            bottomLeftGrid.Widgets.Add(startButton);
 
             startButton.Click += (s, a) =>
             {
@@ -208,7 +222,7 @@ namespace MonoChip8
             pauseButton.GridColumn = 1;
             pauseButton.GridRow = 1;
             pauseButton.Margin = new Myra.Graphics2D.Thickness(0, 10, 0, 0);
-            bottomGrid.Widgets.Add(pauseButton);
+            bottomLeftGrid.Widgets.Add(pauseButton);
 
             pauseButton.Click += (s, a) =>
             {
@@ -216,17 +230,35 @@ namespace MonoChip8
             };
 
             _desktop = new Desktop();
-            _desktop.Root = grid;
+            _desktop.Root = mainGrid;
         }
 
-        public void Update(Chip8.CPU cpu)
+        public void Update(Chip8.CPU cpu, ushort[] memory)
         {
+            for (int i = 0; i < 15; i++)
+            {
+                if (i < 7)
+                {
+                    ((Label)_desktop.GetWidgetByID($"memory {i}")).Text = $"[0x{Convert.ToString(cpu.Pc - (7 - i), 16).PadLeft(4, '0').ToUpper()}] = 0x{Convert.ToString(memory[cpu.Pc - (7 - i)], 16).PadLeft(4, '0').ToUpper()}";
+                }
+                else if (i == 7)
+                {
+                    ((Label)_desktop.GetWidgetByID($"memory {i}")).Text = $"[0x{Convert.ToString(cpu.Pc, 16).PadLeft(4, '0').ToUpper()}] = 0x{Convert.ToString(memory[cpu.Pc - (7 - i)], 16).PadLeft(4, '0').ToUpper()}";
+                }
+                else
+                {
+                    ((Label)_desktop.GetWidgetByID($"memory {i}")).Text = $"[0x{Convert.ToString(cpu.Pc + (i - 7), 16).PadLeft(4, '0').ToUpper()}] = 0x{Convert.ToString(memory[cpu.Pc - (7 - i)], 16).PadLeft(4, '0').ToUpper()}";
+                }
+            }
+
             ((Label)_desktop.GetWidgetByID("pcLabel")).Text = $"PC: {cpu.Pc}";
 
             for (int i = 0; i < 16; i++)
             {
                 ((Label)_desktop.GetWidgetByID($"v{i} Register")).Text = $"V[0x{Convert.ToString(i, 16).ToUpper()}]: {cpu.V[i]}";
             }
+
+            ((Label)_desktop.GetWidgetByID("opcode")).Text = $"Op: {Convert.ToString(cpu.Opcode.Data, 16).PadLeft(4, '0').ToUpper()}";
 
         }
 
